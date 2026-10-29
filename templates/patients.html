@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicalCase | Patients</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <h2>✚ ClinicalCase</h2>
+        <nav>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="active" href="{{ url_for('patients') }}">Patients</a>
+            <a href="{{url_for('new_examination')}}">New Examination</a>
+            <a href="{{url_for('examinations')}}">All Examinations</a>
+            
+            <a href="{{url_for('reports')}}">Reports</a>
+            
+        </nav>
+        <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+            <button class="logout-btn" type="submit">↪ Logout</button>
+        </form>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>Patient Management</h1>
+                <p>Register and manage patient records</p>
+            </div>
+            <a class="link-button" href="{{ url_for('new_patient') }}">
+                + New Patient
+            </a>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <p class="notice">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="content-card">
+            <form method="GET" action="{{ url_for('patients') }}" class="search-form">
+                <input type="search" name="search"
+                       placeholder="Search name, patient ID or mobile"
+                       value="{{ search }}">
+                <button class="primary-btn" type="submit">Search</button>
+                <a href="{{ url_for('patients') }}">Clear</a>
+            </form>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>DOB</th>
+                            <th>Sex</th>
+                            <th>Mobile</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td>{{ patient.patient_id }}</td>
+                            <td>{{ patient.full_name }}</td>
+                            <td>
+                                {{ patient.date_of_birth.strftime('%d %b %Y')
+                                   if patient.date_of_birth else '—' }}
+                            </td>
+                            <td>{{ patient.sex or '—' }}</td>
+                            <td>{{ patient.mobile or '—' }}</td>
+                            <td>
+                                <a href="{{ url_for('edit_patient',
+                                    patient_db_id=patient.id) }}">Edit</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6">No patients found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

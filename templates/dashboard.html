@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClinicalCase | Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h2>✚ ClinicalCase</h2>
+
+      <nav>
+        <a class="active" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{url_for('patients')}}">Patients</a>
+        <a href="{{url_for('new_examination')}}">New Examination</a>
+        <a href="{{url_for('examinations')}}">All Examinations</a>
+       
+        <a href="{{url_for('reports')}}">Reports</a>
+
+        
+      </nav>
+
+      <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+        <button type="submit" class="logout-btn">↪ Logout</button>
+      </form>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Welcome, {{ session.get('full_name', 'Doctor') }}</p>
+        </div>
+        <span class="profile">{{ session.get('role', 'DOCTOR') }}</span>
+      </header>
+
+      <section class="stats">
+        <article class="stat-card">
+          <p>Total Patients</p>
+          <h2>{{ total_patients }}</h2>
+        </article>
+        <article class="stat-card">
+          <p>Examinations</p>
+          <h2>{{ total_examinations }}</h2>
+        </article>
+        <article class="stat-card">
+          <p>Chest X-Ray</p>
+          <h2>{{ total_xray }}</h2>
+        </article>
+        <article class="stat-card">
+          <p>ECG</p>
+          <h2>{{ total_ecg }}</h2>
+        </article>
+      </section>
+
+      <section class="content-card">
+        <h2>Quick Actions</h2>
+        <div class="actions">
+          
+    <a class="link-button" href="{{ url_for('new_patient') }}">
+        + New Patient
+    </a>
+
+    <a class="link-button" href="{{ url_for('new_examination') }}">
+        + New Examination
+    </a>
+
+    <a class="link-button" href="{{ url_for('examinations') }}">
+        View Examinations
+    </a>
+
+    <a class="link-button" href="{{ url_for('reports') }}">View Reports</a>
+
+        </div>
+        <p id="actionMessage" class="help-text"></p>
+      </section>
+
+      <section class="content-card">
+        <h2>Recent Examinations</h2>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Examination</th>
+                <th>Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for examination, patient in recent_examinations %}
+              <tr>
+                <td>{{ patient.full_name }}</td>
+                <td>{{ examination.examination_type }}</td>
+                <td>{{ examination.examination_date.strftime('%d %b %Y') }}</td>
+                <td><span class="status">{{ examination.status }}</span></td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="4">No examinations recorded yet.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
+</html>

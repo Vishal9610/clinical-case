@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicalCase - Reports</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+
+    </style>
+</head>
+
+<body>
+    <div class="reports-container">
+
+        <a href="{{ url_for('dashboard') }}" class="back-link">
+            ← Back to Dashboard
+        </a>
+
+        <div class="reports-header">
+
+            <!-- {% if clinic_settings %}
+            <div class="clinic-report-header">
+                <h2>{{ clinic_settings.clinic_name }}</h2>
+
+                {% if clinic_settings.clinic_address %}
+                <p>{{ clinic_settings.clinic_address }}</p>
+                {% endif %}
+
+                {% if clinic_settings.clinic_phone %}
+                <p>Phone: {{ clinic_settings.clinic_phone }}</p>
+                {% endif %}
+
+                {% if clinic_settings.clinic_email %}
+                <p>Email: {{ clinic_settings.clinic_email }}</p>
+                {% endif %}
+
+                {% if clinic_settings.show_doctor_details %}
+                {% if clinic_settings.doctor_name %}
+                <p>Doctor: {{ clinic_settings.doctor_name }}</p>
+                {% endif %}
+
+                {% if clinic_settings.doctor_designation %}
+                <p>{{ clinic_settings.doctor_designation }}</p>
+                {% endif %}
+
+                {% if clinic_settings.doctor_registration_no %}
+                <p>Registration No: {{ clinic_settings.doctor_registration_no }}</p>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endif %} -->
+
+            <div>
+                <h1>Medical Reports</h1>
+                <p>View examination records and open individual reports.</p>
+            </div>
+
+            <a href="{{ url_for('new_examination') }}" class="report-link">
+                + New Examination
+            </a>
+        </div>
+
+        <div class="reports-table-wrapper">
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>Examination ID</th>
+                        <th>Patient</th>
+                        <th>Examination Type</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for examination in examinations %}
+                    <tr>
+                        <td>{{ examination.id }}</td>
+
+                        <td>
+                            {{ examination.patient.full_name if examination.patient else 'N/A' }}
+                        </td>
+
+                        <td>
+                            {{ examination.examination_type|replace('_', ' ') }}
+                        </td>
+
+                        <td>
+                            {{ examination.examination_date.strftime('%d-%m-%Y') if examination.examination_date else
+                            'N/A' }}
+                        </td>
+
+                        <td>
+                            {{ examination.status|replace('_', ' ') }}
+                        </td>
+
+                        <td>
+                            <a href="{{ url_for('examination_report', examination_id=examination.id) }}"
+                                class="report-link">
+                                View Report
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-reports">
+                            No examination reports found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+
+</html>

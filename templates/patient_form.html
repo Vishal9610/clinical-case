@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicalCase | Patient Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <h2>✚ ClinicalCase</h2>
+        <nav>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a class="active" href="{{ url_for('patients') }}">Patients</a>
+        </nav>
+        <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+            <button class="logout-btn" type="submit">↪ Logout</button>
+        </form>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <h1>{{ 'Edit Patient' if patient else 'Register New Patient' }}</h1>
+                <p>Enter patient information below</p>
+            </div>
+            <a href="{{ url_for('patients') }}">← Back to Patients</a>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <p class="notice">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="content-card">
+            {% if patient %}
+                <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+            {% else %}
+                <p><strong>Patient ID:</strong> Generated automatically after saving</p>
+            {% endif %}
+
+            <form method="POST" class="patient-form">
+                <div class="form-grid">
+                    <div>
+                        <label for="full_name">Patient Name *</label>
+                        <input id="full_name" name="full_name"
+                               value="{{ patient.full_name if patient else '' }}"
+                               maxlength="150" required>
+                    </div>
+
+                    <div>
+                        <label for="date_of_birth">Date of Birth</label>
+                        <input id="date_of_birth" name="date_of_birth"
+                               type="date" max="{{ today or '' }}"
+                               value="{{ patient.date_of_birth.isoformat() if patient and patient.date_of_birth else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="sex">Sex</label>
+                        <select id="sex" name="sex">
+                            <option value="">Select</option>
+                            {% for option in ['Male', 'Female', 'Other', 'Not recorded'] %}
+                                <option value="{{ option }}"
+                                    {% if patient and patient.sex == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="mobile">Mobile Number</label>
+                        <input id="mobile" name="mobile" type="tel"
+                               maxlength="15"
+                               value="{{ patient.mobile if patient and patient.mobile else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="email">Email</label>
+                        <input id="email" name="email" type="email"
+                               maxlength="150"
+                               value="{{ patient.email if patient and patient.email else '' }}">
+                    </div>
+
+                    <div>
+                        <label for="clinical_indication">Clinical Indication</label>
+                        <input id="clinical_indication" name="clinical_indication"
+                               value="{{ patient.clinical_indication if patient and patient.clinical_indication else '' }}">
+                    </div>
+
+                    <div class="full-width">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" rows="3">{{ patient.address if patient and patient.address else '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="primary-btn" type="submit">
+                        {{ 'Update Patient' if patient else 'Save Patient' }}
+                    </button>
+                    <button class="secondary-btn" type="reset">Clear Form</button>
+                    <a href="{{ url_for('patients') }}">Cancel</a>
+                </div>
+            </form>
+        </section>
+    </main>
+</div>
+</body>
+</html>

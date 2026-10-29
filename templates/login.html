@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClinicalCase | Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="login-page">
+
+  <main class="login-card">
+    <div class="brand-icon">+</div>
+    <h1>ClinicalCase</h1>
+    <p class="subtitle">Clinical Examination & Reporting System</p>
+    <h2>Welcome Back</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <p class="message">{{ message }}</p>
+    {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <label for="username">Email / Username</label>
+      <input id="username" name="username" type="text" placeholder="Enter username" required>
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" placeholder="Enter password" required>
+
+      <label class="remember">
+        <input type="checkbox" name="remember">
+        Remember Me
+      </label>
+
+      <button type="submit" class="primary-btn">LOGIN</button>
+    </form>
+
+    <p class="help-text">
+      Forgot password? Contact your authorized administrator.
+    </p>
+  </main>
+
+</body>
+
+</html>
