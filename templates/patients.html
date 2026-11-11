@@ -14,11 +14,9 @@
         <nav>
             <a href="{{ url_for('dashboard') }}">Dashboard</a>
             <a class="active" href="{{ url_for('patients') }}">Patients</a>
-            <a href="{{url_for('new_examination')}}">New Examination</a>
-            <a href="{{url_for('examinations')}}">All Examinations</a>
-            
-            <a href="{{url_for('reports')}}">Reports</a>
-            
+            <a href="{{ url_for('new_examination') }}">New Examination</a>
+            <a href="{{ url_for('examinations') }}">All Examinations</a>
+            <a href="{{ url_for('reports') }}">Reports</a>
         </nav>
         <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
             <button class="logout-btn" type="submit">↪ Logout</button>
@@ -57,9 +55,11 @@
                         <tr>
                             <th>Patient ID</th>
                             <th>Name</th>
-                            <th>DOB</th>
+                            <th>Age</th>
                             <th>Sex</th>
-                            <th>Mobile</th>
+                            <th>Weight</th>
+                            <th>Height</th>
+                            <th>Oxygen Level</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -68,20 +68,40 @@
                         <tr>
                             <td>{{ patient.patient_id }}</td>
                             <td>{{ patient.full_name }}</td>
-                            <td>
-                                {{ patient.date_of_birth.strftime('%d %b %Y')
-                                   if patient.date_of_birth else '—' }}
-                            </td>
+                            <td>{{ patient.age if patient.age is not none else '—' }}</td>
                             <td>{{ patient.sex or '—' }}</td>
-                            <td>{{ patient.mobile or '—' }}</td>
+
                             <td>
-                                <a href="{{ url_for('edit_patient',
-                                    patient_db_id=patient.id) }}">Edit</a>
+                                {% if patient.weight is not none %}
+                                    {{ patient.weight }} {{ patient.weight_unit or 'kg' }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if patient.height is not none %}
+                                    {{ patient.height }} {{ patient.height_unit or 'cm' }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if patient.oxigen is not none %}
+                                    {{ patient.oxigen }}%
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                <a href="{{ url_for('edit_patient', patient_db_id=patient.id) }}">Edit</a>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="6">No patients found.</td>
+                            <td colspan="8">No patients found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

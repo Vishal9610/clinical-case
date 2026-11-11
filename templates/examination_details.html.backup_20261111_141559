@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicalCase | Examination Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="layout">
+
+        <aside class="sidebar">
+            <h2>✚ ClinicalCase</h2>
+
+            <nav>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('patients') }}">Patients</a>
+                <a href="{{ url_for('new_examination') }}">New Examination</a>
+                <a class="active" href="{{ url_for('examinations') }}">All Examinations</a>
+                <a href="{{url_for('reports')}}">Reports</a>
+            </nav>
+
+            <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+                <button class="logout-btn" type="submit">↪ Logout</button>
+            </form>
+        </aside>
+
+        <main class="main-content">
+
+            <!-- Page Header -->
+            <header class="topbar">
+                <div>
+                    <h1>Examination Details</h1>
+                    <p>Complete patient examination record</p>
+                </div>
+
+                <div class="form-actions">
+                    <a class="primary-btn" href="{{ url_for('edit_examination',
+                                    examination_id=examination.id) }}">
+                        ✎ Edit Examination
+                    </a>
+
+
+                    <a class="primary-btn" href="{{ url_for('examination_report',
+                    examination_id=examination.id) }}">
+                        📄 Generate Report
+                    </a>
+
+
+                    <a class="link-button" href="{{ url_for('examinations') }}">
+                        Back to Examinations
+                    </a>
+                </div>
+            </header>
+
+            <!-- Patient Information -->
+            <section class="content-card">
+                <h2>Patient Information</h2>
+
+                <div class="form-grid">
+                    <div>
+                        <strong>Patient ID:</strong>
+                        <p>{{ patient.patient_id or 'Not recorded' }}</p>
+                    </div>
+
+                    <div>
+                        <strong>Patient Name:</strong>
+                        <p>{{ patient.full_name or 'Not recorded' }}</p>
+                    </div>
+
+                    <div>
+                        <strong>Age:</strong>
+                        <p>
+                            {{ patient.age if patient.age is not none else 'Not recorded' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong>Sex:</strong>
+                        <p>{{ patient.sex or 'Not recorded' }}</p>
+                    </div>
+
+                    <div>
+                        <strong>Weight:</strong>
+                        <p>
+                            {% if patient.weight is not none %}
+                            {{ patient.weight }} {{ patient.weight_unit or 'kg' }}
+                            {% else %}
+                            Not recorded
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong>Height:</strong>
+                        <p>
+                            {% if patient.height is not none %}
+                            {{ patient.height }} {{ patient.height_unit or 'cm' }}
+                            {% else %}
+                            Not recorded
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong>Oxygen (SpO₂):</strong>
+                        <p>
+                            {% if patient.oxigen is not none %}
+                            {{ patient.oxigen }}%
+                            {% else %}
+                            Not recorded
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong>Examination ID:</strong>
+                        <p>{{ examination.id }}</p>
+                    </div>
+
+                    <div>
+                        <strong>Examination Type:</strong>
+                        <p>
+                            {% if examination.examination_type == 'CHEST_XRAY' %}
+                            Chest X-Ray
+                            {% elif examination.examination_type == 'ECG' %}
+                            ECG
+                            {% elif examination.examination_type == 'BOTH' %}
+                            Chest X-Ray + ECG
+                            {% else %}
+                            {{ (examination.examination_type or 'Not recorded')|replace('_', ' ') }}
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong>Examination Date:</strong>
+                        <p>
+                            {% if examination.examination_date %}
+                            {{ examination.examination_date.strftime('%d %b %Y')
+                            if examination.examination_date.strftime is defined
+                            else examination.examination_date }}
+                            {% else %}
+                            Not recorded
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div>
+                        <strong>Status:</strong>
+                        <p>{{ examination.status or 'Not recorded' }}</p>
+                    </div>
+                </div>
+
+                <div class="full-width">
+                    <strong>Clinical Observations</strong>
+                    <p style="white-space: pre-wrap;">{{ examination.clinical_observations or 'Not recorded' }}</p>
+                </div>
+
+                <div class="full-width">
+                    <strong>Clinical Impression</strong>
+                    <p style="white-space: pre-wrap;">{{ examination.clinical_impression or 'Not recorded' }}</p>
+                </div>
+            </section>
+
+                        <!-- Examination Images -->
+            <section class="content-card">
+                <h2>Examination Images</h2>
+
+                {% if images %}
+                <div class="form-grid">
+                    {% for image in images %}
+                    <div>
+                        <strong>{{ image.original_filename }}</strong>
+                        <p>Format: {{ image.mime_type }}</p>
+                        <p>Size: {{ "%.2f"|format(image.file_size / 1048576) }} MB</p>
+                        <p>Status: {{ image.status }}</p>
+                        <p>Storage: {{ image.storage_provider or 'Not uploaded yet' }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No images are linked to this examination.</p>
+                {% endif %}
+            </section>
+<!-- Chest X-Ray Findings -->
+            {% if examination.examination_type in ['CHEST_XRAY', 'BOTH'] %}
+            <section class="content-card">
+                <h2>Chest X-Ray Findings — 18 Fields</h2>
+
+                {% if xray %}
+                <div class="form-grid">
+
+                    {% for label, value in [
+                    ('1. Rotation', xray.rotation),
+                    ('2. Inspiratory Film', xray.inspiratory_film),
+                    ('3. Penetration', xray.penetration),
+                    ('4. Situs', xray.situs),
+                    ('5. Cardiac Position', xray.cardiac_position),
+                    ('6. Cardiomegaly', xray.cardiomegaly),
+                    ('7. Right Atrium (RA)', xray.ra_enlargement),
+                    ('8. Left Atrium (LA)', xray.la_enlargement),
+                    ('9. Right Ventricle (RV)', xray.rv_enlargement),
+                    ('10. Left Ventricle (LV)', xray.lv_enlargement),
+                    ('11. Thymic Shadow', xray.thymic_shadow),
+
+                    ('12. Descending Aorta (DA)', xray.da_dilatation),
+                    ('13. Main Pulmonary Artery (MPA)', xray.mpa_dilatation),
+                    ('14. Right Pulmonary Artery (RPA)', xray.rpa_dilatation),
+                    ('15. Left Pulmonary Artery (LPA)', xray.lpa_dilatation),
+                    ('16. Pulmonary Plethora', xray.pulmonary_plethora),
+                    ('17. Pulmonary Oligemia', xray.pulmonary_oligemia),
+
+                    ('18. Pulmonary Venous Hypertension (PVH)', xray.pvh)
+                    ] %}
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <p>{{ value if value not in [None, ''] else 'Not recorded' }}</p>
+                    </div>
+                    {% endfor %}
+
+                </div>
+
+                <div class="full-width">
+                    <strong>Additional X-Ray Notes</strong>
+                    <p style="white-space: pre-wrap;">{{ xray.additional_notes or 'Not recorded' }}</p>
+                </div>
+
+                {% else %}
+                <p>No Chest X-Ray findings have been saved for this examination.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            <!-- ECG Findings -->
+            {% if examination.examination_type in ['ECG', 'BOTH'] %}
+            <section class="content-card">
+                <h2>ECG Findings — 16 Fields</h2>
+
+                {% if ecg %}
+                <div class="form-grid">
+
+                    {% for label, value in [
+                    ('1. Sinus Rhythm', ecg.sinus_rhythm),
+                    ('2. Heart Rate', ecg.heart_rate),
+                    ('3. P Axis', ecg.p_axis),
+                    ('4. QRS Axis', ecg.qrs_axis),
+                    ('5. PR Interval', ecg.pr_interval),
+                    ('6. QTc Interval', ecg.qtc_interval),
+                    ('7. QRS Duration', ecg.qrs_duration),
+                    ('8. Right Atrial Enlargement (RAE)', ecg.ra_enlargement_ecg),
+                    ('9. Left Atrial Enlargement (LAE)', ecg.la_enlargement_ecg),
+                    ('10. Bundle Branch Block (BBB)', ecg.bundle_branch_block),
+                    ('11. RVH: Pressure Overload', ecg.rvh_pressure_overload),
+                    ('12. RVH: Volume Overload', ecg.rvh_volume_overload),
+                    ('13. LVH: Pressure Overload', ecg.lvh_pressure_overload),
+                    ('14. LVH: Volume Overload', ecg.lvh_volume_overload),
+                    ('15. Biventricular Hypertrophy (BVH)', ecg.bv_hypertrophy),
+                    ('16. ST Segment', ecg.st_segment)
+                    ] %}
+                    <div>
+                        <strong>{{ label }}</strong>
+                        <p>{{ value if value not in [None, ''] else 'Not recorded' }}</p>
+                    </div>
+                    {% endfor %}
+
+                </div>
+
+                <div class="full-width">
+                    <strong>Additional ECG Observations</strong>
+                    <p style="white-space: pre-wrap;">{{ ecg.additional_observations or 'Not recorded' }}</p>
+                </div>
+
+                {% else %}
+                <p>No ECG findings have been saved for this examination.</p>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            <!-- Bottom Actions -->
+            <div class="form-actions">
+                <a class="link-button" href="{{ url_for('examinations') }}">
+                    ← Back to Examinations
+                </a>
+            </div>
+
+        </main>
+    </div>
+</body>
+
+</html>

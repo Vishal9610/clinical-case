@@ -93,8 +93,10 @@
                                     Chest X-Ray
                                     {% elif examination.examination_type == 'ECG' %}
                                     ECG
-                                    {% else %}
+                                    {% elif examination.examination_type == 'BOTH' %}
                                     Chest X-Ray + ECG
+                                    {% else %}
+                                    {{ examination.examination_type or 'N/A' }}
                                     {% endif %}
                                 </td>
 

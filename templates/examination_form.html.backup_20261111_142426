@@ -1,0 +1,814 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ClinicalCase | {{ 'Edit Examination' if edit_mode else 'New Examination' }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <h2>✚ ClinicalCase</h2>
+            <nav>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('patients') }}">Patients</a>
+                <a class="active" href="{{ url_for('new_examination') }}">New Examination</a>
+                <a href="{{ url_for('examinations') }}">All Examinations</a>
+                <a href="{{url_for('reports')}}">Reports</a>
+            </nav>
+
+            <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+                <button class="logout-btn" type="submit">↪ Logout</button>
+            </form>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h1>{{ 'Edit Examination' if edit_mode else 'New Examination' }}</h1>
+                    <p>
+                        {{ 'Update saved clinical findings and measurements'
+                           if edit_mode
+                           else 'Record clinical findings and actual measurements' }}
+                    </p>
+                </div>
+            </header>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <p class="notice">{{ message }}</p>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST" enctype="multipart/form-data" class="examination-form">
+                <!-- EXAMINATION IMAGES -->
+                
+
+                <!-- EXAMINATION DETAILS -->
+                <section class="content-card">
+                    <h2>Examination Details</h2>
+
+                    <div class="form-grid">
+
+                        <div>
+                            <label for="patient_id">Patient *</label>
+
+                            {% if edit_mode %}
+                                <p>
+                                    <strong>
+                                        {% for patient in patients %}
+                                            {% if patient.id == examination.patient_id %}
+                                                {{ patient.patient_id }} — {{ patient.full_name }}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </strong>
+                                </p>
+
+                                <input
+                                    type="hidden"
+                                    id="patient_id"
+                                    name="patient_id"
+                                    value="{{ examination.patient_id }}"
+                                >
+
+                                <p class="help-text">
+                                    The patient linked to this examination cannot be changed here.
+                                </p>
+                            {% else %}
+                                <select id="patient_id" name="patient_id" required>
+                                    <option value="">Select patient</option>
+
+                                    {% for patient in patients %}
+                                        <option value="{{ patient.id }}">
+                                            {{ patient.patient_id }} — {{ patient.full_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                                {% if not patients %}
+                                    <p class="help-text">
+                                        Register a patient before starting an examination.
+                                    </p>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="examination_type">Examination Type *</label>
+
+                            <select id="examination_type" name="examination_type" required>
+                                <option value="CHEST_XRAY"
+                                    {% if examination and examination.examination_type == 'CHEST_XRAY' %}selected{% endif %}>
+                                    Chest X-Ray
+                                </option>
+
+                                <option value="ECG"
+                                    {% if examination and examination.examination_type == 'ECG' %}selected{% endif %}>
+                                    ECG
+                                </option>
+
+                                <option value="BOTH"
+                                    {% if examination and examination.examination_type == 'BOTH' %}selected{% endif %}>
+                                    Chest X-Ray + ECG
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="examination_date">Examination Date *</label>
+
+                            <input
+                                id="examination_date"
+                                name="examination_date"
+                                type="date"
+                                value="{{ examination.examination_date.isoformat() if examination and examination.examination_date else today }}"
+                                max="{{ today }}"
+                                required
+                            >
+                        </div>
+
+                    </div>
+                </section>
+
+                <section class="content-card" id="examinationImageSection">
+                    <h2>Examination Images</h2>
+
+                    <p class="help-text">
+                        Capture images using your mobile camera or select existing images
+                        from your device gallery.
+                    </p>
+
+                    <div class="form-grid">
+
+                        <div>
+                            <label for="galleryImages">Choose from Gallery</label>
+                            <input
+                                type="file"
+                                id="galleryImages"
+                                name="examination_images"
+                                accept="image/*"
+                                multiple
+                            >
+                        </div>
+                    </div>
+
+                    <p id="imageSelectionMessage" class="help-text" aria-live="polite">
+                        No images selected.
+                    </p>
+
+                    <div
+                        id="examinationImagePreview"
+                        class="form-grid"
+                        aria-live="polite"
+                    ></div>
+                </section>
+
+                
+<!-- LOAD PREVIOUSLY SAVED FINDINGS: EDIT MODE ONLY -->
+{% if edit_mode %}
+<section class="content-card" id="loadFindingsSection">
+    <h3>Load Previously Saved Findings</h3>
+
+    <p class="help-text">
+        Select another examination belonging to this patient.
+        Review the loaded findings before saving.
+    </p>
+
+    <div class="form-grid">
+
+        <!-- X-RAY LOADER -->
+        <div id="xrayLoader">
+            <label for="xraySource">Existing X-Ray Examination</label>
+
+            <select id="xraySource">
+                <option value="">Select X-Ray examination</option>
+
+                {% for item in xray_sources %}
+                    <option value="{{ item.id }}">
+                        #{{ item.id }} — {{ item.examination_type }}
+                        — {{ item.examination_date }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="button" id="loadXrayButton">
+                Load Existing X-Ray Findings
+            </button>
+        </div>
+
+        <!-- ECG LOADER -->
+        <div id="ecgLoader">
+            <label for="ecgSource">Existing ECG Examination</label>
+
+            <select id="ecgSource">
+                <option value="">Select ECG examination</option>
+
+                {% for item in ecg_sources %}
+                    <option value="{{ item.id }}">
+                        #{{ item.id }} — {{ item.examination_type }}
+                        — {{ item.examination_date }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="button" id="loadEcgButton">
+                Load Existing ECG Findings
+            </button>
+        </div>
+
+    </div>
+
+    <p id="loadFindingsMessage" role="status" aria-live="polite"></p>
+</section>
+{% endif %}
+
+                <!-- CHEST X-RAY: 18 FIELDS -->
+                <section class="content-card exam-section" id="xraySection">
+                    <h2>Chest X-Ray Findings</h2>
+
+                    <div class="form-grid">
+                        <div>
+                            <label for="rotation">1. Rotation</label>
+                            <select id="rotation" name="rotation">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="inspiratory_film">2. Inspiratory Film</label>
+                            <select id="inspiratory_film" name="inspiratory_film">
+                                <option value="">Not recorded</option>
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="penetration">3. Penetration</label>
+                            <select id="penetration" name="penetration">
+                                <option value="">Not recorded</option>
+                                <option>Normal</option>
+                                <option>Underexposed</option>
+                                <option>Overexposed</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="situs">4. Situs</label>
+                            <select id="situs" name="situs">
+                                <option value="">Not recorded</option>
+                                <option>Solitus</option>
+                                <option>Inversus</option>
+                                <option>Indeterminate</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="cardiac_position">5. Cardiac Position</label>
+                            <select id="cardiac_position" name="cardiac_position">
+                                <option value="">Not recorded</option>
+                                <option>Levocardia</option>
+                                <option>Dextrocardia</option>
+                                <option>Mesocardia</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="cardiomegaly">6. Cardiomegaly</label>
+                            <select id="cardiomegaly" name="cardiomegaly">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="ra_enlargement">7. Right Atrium (RA)</label>
+                            <select id="ra_enlargement" name="ra_enlargement">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="la_enlargement">8. Left Atrium (LA)</label>
+                            <select id="la_enlargement" name="la_enlargement">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="rv_enlargement">9. Right Ventricle (RV)</label>
+                            <select id="rv_enlargement" name="rv_enlargement">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="lv_enlargement">10. Left Ventricle (LV)</label>
+                            <select id="lv_enlargement" name="lv_enlargement">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="thymic_shadow">11. Thymic Shadow</label>
+                            <select id="thymic_shadow" name="thymic_shadow">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        
+                        <div>
+                            <label for="da_dilatation">12. Descending Aorta (DA)</label>
+                            <select id="da_dilatation" name="da_dilatation">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="mpa_dilatation">13. Main Pulmonary Artery (MPA)</label>
+                            <select id="mpa_dilatation" name="mpa_dilatation">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="rpa_dilatation">14. Right Pulmonary Artery (RPA)</label>
+                            <select id="rpa_dilatation" name="rpa_dilatation">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="lpa_dilatation">15. Left Pulmonary Artery (LPA)</label>
+                            <select id="lpa_dilatation" name="lpa_dilatation">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="pulmonary_plethora">16. Pulmonary Plethora</label>
+                            <select id="pulmonary_plethora" name="pulmonary_plethora">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="pulmonary_oligemia">17. Pulmonary Oligemia</label>
+                            <select id="pulmonary_oligemia" name="pulmonary_oligemia">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="pvh">18. Pulmonary Venous Hypertension (PVH)</label>
+                            <select id="pvh" name="pvh">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div class="full-width">
+                            <label for="xray_notes">Additional X-Ray Notes</label>
+                            <textarea id="xray_notes" name="xray_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ECG: 16 FIELDS -->
+                <section class="content-card exam-section" id="ecgSection">
+                    <h2>ECG Findings</h2>
+
+                    <div class="form-grid">
+                        <div>
+                            <label for="sinus_rhythm">1. Sinus Rhythm</label>
+                            <select id="sinus_rhythm" name="sinus_rhythm">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="heart_rate">2. Heart Rate (BPM)</label>
+                            <select id="heart_rate" name="heart_rate">
+                                <option value="">Not recorded</option>
+                                <option>Below 60 BPM</option>
+                                <option>60–140 BPM</option>
+                                <option>Above 140 BPM</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="p_axis">3. P Axis (0 To 75 Degree)</label>
+                            <select id="p_axis" name="p_axis">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="qrs_axis">4. QRS Axis</label>
+                            <select id="qrs_axis" name="qrs_axis">
+                                <option value="">Not recorded</option>
+                                <option>Normal</option>
+                                <option>LAD</option>
+                                <option>RAD</option>
+                                <option>EAD</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="pr_interval">5. PR Interval (ms)</label>
+                            <select id="pr_interval" name="pr_interval">
+                                <option value="">Not recorded</option>
+                                <option>Normal</option>
+                                <option>Decreased</option>
+                                <option>Increased</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="qtc_interval">6. QTC Interval</label>
+                            <select id="qtc_interval" name="qtc_interval">
+                                <option value="">Not recorded</option>
+                                <option>Normal</option>
+                                <option>Decreased</option>
+                                <option>Increased</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="qrs_duration">7. QRS Duration</label>
+                            <select id="qrs_duration" name="qrs_duration">
+                                <option value="">Not recorded</option>
+                                <option>Below 80 ms</option>
+                                <option>80-110 ms</option>
+                                <option>Above 110 ms</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="ra_enlargement_ecg">8. Right Atrial Enlargement (RAE)</label>
+                            <select id="ra_enlargement_ecg" name="ra_enlargement_ecg">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="la_enlargement_ecg">9. Left Atrial Enlargement (LAE)</label>
+                            <select id="la_enlargement_ecg" name="la_enlargement_ecg">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="bundle_branch_block">10. Bundle Branch Block (BBB)</label>
+                            <select id="bundle_branch_block" name="bundle_branch_block">
+                                <option value="">Not recorded</option>
+                                <option>Normal / None Reported</option>
+                                <option>Left BBB</option>
+                                <option>Right BBB</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="rvh_pressure_overload">11. RVH: Pressure Overload</label>
+                            <select id="rvh_pressure_overload" name="rvh_pressure_overload">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="rvh_volume_overload">12. RVH: Volume Overload</label>
+                            <select id="rvh_volume_overload" name="rvh_volume_overload">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="lvh_pressure_overload">13. LVH: Pressure Overload</label>
+                            <select id="lvh_pressure_overload" name="lvh_pressure_overload">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="lvh_volume_overload">14. LVH: Volume Overload</label>
+                            <select id="lvh_volume_overload" name="lvh_volume_overload">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="bv_hypertrophy">15. Biventricular Hypertrophy (BVH)</label>
+                            <select id="bv_hypertrophy" name="bv_hypertrophy">
+                                <option value="">Not recorded</option>
+                                <option>Present</option>
+                                <option>Absent</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="st_segment">16. ST Segment</label>
+                            <select id="st_segment" name="st_segment">
+                                <option value="">Not recorded</option>
+                                <option>Normal</option>
+                                <option>Increased</option>
+                                <option>Decreased</option>
+                            </select>
+                        </div>
+
+                        <div class="full-width">
+                            <label for="ecg_notes">Additional ECG Observations</label>
+                            <textarea id="ecg_notes" name="ecg_notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FORM ACTIONS -->
+                <div class="form-actions">
+                    <button class="secondary-btn" type="submit" name="action" value="draft">
+                        Save Draft
+                    </button>
+
+                    <button class="primary-btn" type="submit" name="action" value="review">
+                        Save &amp; Request Review
+                    </button>
+
+                    <a class="cancel-btn" href="{{ url_for('examination_details', examination_id=examination.id) if edit_mode else url_for('dashboard') }}">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const typeField = document.getElementById("examination_type");
+        const xraySection = document.getElementById("xraySection");
+        const ecgSection = document.getElementById("ecgSection");
+
+        function updateSections() {
+            const type = typeField ? typeField.value : "";
+
+            if (xraySection) {
+                const showXray = type === "CHEST_XRAY" || type === "BOTH";
+                xraySection.hidden = !showXray;
+                xraySection.style.display = showXray ? "" : "none";
+            }
+
+            if (ecgSection) {
+                const showEcg = type === "ECG" || type === "BOTH";
+                ecgSection.hidden = !showEcg;
+                ecgSection.style.display = showEcg ? "" : "none";
+            }
+        }
+
+        
+    function updateLoadOptions() {
+        const type = typeField ? typeField.value : "";
+
+        const loadSection = document.getElementById("loadFindingsSection");
+        const xrayLoader = document.getElementById("xrayLoader");
+        const ecgLoader = document.getElementById("ecgLoader");
+
+        if (!loadSection || !xrayLoader || !ecgLoader) return;
+
+        if (type === "CHEST_XRAY") {
+            loadSection.style.display = "";
+            xrayLoader.style.display = "";
+            ecgLoader.style.display = "none";
+        } else if (type === "ECG") {
+            loadSection.style.display = "";
+            xrayLoader.style.display = "none";
+            ecgLoader.style.display = "";
+        } else if (type === "BOTH") {
+            loadSection.style.display = "";
+            xrayLoader.style.display = "";
+            ecgLoader.style.display = "";
+        } else {
+            loadSection.style.display = "none";
+        }
+    }
+
+if (typeField) {
+    typeField.addEventListener("change", updateLoadOptions);
+}
+
+updateLoadOptions();
+
+
+        if (typeField) {
+            typeField.addEventListener("change", updateSections);
+        }
+
+        {% if edit_mode %}
+        const editData = {
+            examination_type: {{ examination.examination_type | tojson }},
+            examination_date: {{ (examination.examination_date.isoformat() if examination.examination_date else '') | tojson }},
+
+            rotation: {{ (xray.rotation if xray else none) | tojson }},
+            inspiratory_film: {{ (xray.inspiratory_film if xray else none) | tojson }},
+            penetration: {{ (xray.penetration if xray else none) | tojson }},
+            situs: {{ (xray.situs if xray else none) | tojson }},
+            cardiac_position: {{ (xray.cardiac_position if xray else none) | tojson }},
+            cardiomegaly: {{ (xray.cardiomegaly if xray else none) | tojson }},
+            ra_enlargement: {{ (xray.ra_enlargement if xray else none) | tojson }},
+            la_enlargement: {{ (xray.la_enlargement if xray else none) | tojson }},
+            rv_enlargement: {{ (xray.rv_enlargement if xray else none) | tojson }},
+            lv_enlargement: {{ (xray.lv_enlargement if xray else none) | tojson }},
+            thymic_shadow: {{ (xray.thymic_shadow if xray else none) | tojson }},
+           
+            da_dilatation: {{ (xray.da_dilatation if xray else none) | tojson }},
+            mpa_dilatation: {{ (xray.mpa_dilatation if xray else none) | tojson }},
+            rpa_dilatation: {{ (xray.rpa_dilatation if xray else none) | tojson }},
+            lpa_dilatation: {{ (xray.lpa_dilatation if xray else none) | tojson }},
+            pulmonary_plethora: {{ (xray.pulmonary_plethora if xray else none) | tojson }},
+            pulmonary_oligemia: {{ (xray.pulmonary_oligemia if xray else none) | tojson }},
+           
+            pvh: {{ (xray.pvh if xray else none) | tojson }},
+            xray_notes: {{ (xray.additional_notes if xray else '') | tojson }},
+
+            sinus_rhythm: {{ (ecg.sinus_rhythm if ecg else none) | tojson }},
+            heart_rate: {{ (ecg.heart_rate if ecg else none) | tojson }},
+            p_axis: {{ (ecg.p_axis if ecg else none) | tojson }},
+            qrs_axis: {{ (ecg.qrs_axis if ecg else none) | tojson }},
+            pr_interval: {{ (ecg.pr_interval if ecg else none) | tojson }},
+            qtc_interval: {{ (ecg.qtc_interval if ecg else none) | tojson }},
+            qrs_duration: {{ (ecg.qrs_duration if ecg else none) | tojson }},
+            ra_enlargement_ecg: {{ (ecg.ra_enlargement_ecg if ecg else none) | tojson }},
+            la_enlargement_ecg: {{ (ecg.la_enlargement_ecg if ecg else none) | tojson }},
+            bundle_branch_block: {{ (ecg.bundle_branch_block if ecg else none) | tojson }},
+            rvh_pressure_overload: {{ (ecg.rvh_pressure_overload if ecg else none) | tojson }},
+            rvh_volume_overload: {{ (ecg.rvh_volume_overload if ecg else none) | tojson }},
+            lvh_pressure_overload: {{ (ecg.lvh_pressure_overload if ecg else none) | tojson }},
+            lvh_volume_overload: {{ (ecg.lvh_volume_overload if ecg else none) | tojson }},
+            bv_hypertrophy: {{ (ecg.bv_hypertrophy if ecg else none) | tojson }},
+            st_segment: {{ (ecg.st_segment if ecg else none) | tojson }},
+            ecg_notes: {{ (ecg.additional_observations if ecg else '') | tojson }}
+        };
+
+        function setField(name, value) {
+            const field = document.getElementById(name);
+
+            if (!field || value === null || value === undefined) {
+                return;
+            }
+
+            const savedValue = String(value).trim();
+
+            if (field.tagName === "SELECT") {
+                let option = Array.from(field.options).find(function (item) {
+                    return item.value.trim() === savedValue ||
+                           item.textContent.trim() === savedValue;
+                });
+
+                if (!option && savedValue !== "") {
+                    option = document.createElement("option");
+                    option.value = savedValue;
+                    option.textContent = savedValue;
+                    field.appendChild(option);
+                }
+
+                if (option) {
+                    field.value = option.value;
+                }
+            } else {
+                field.value = savedValue;
+            }
+        }
+
+        Object.entries(editData).forEach(function ([name, value]) {
+            setField(name, value);
+        });
+        {% endif %}
+
+        updateSections();
+
+        // Load findings from another examination of the same patient.
+        {% if edit_mode %}
+        const message = document.getElementById("loadFindingsMessage");
+        const currentId = {{ examination.id | tojson }};
+
+        async function loadFindings(kind) {
+            const sourceSelect = document.getElementById(
+                kind === "xray" ? "xraySource" : "ecgSource"
+            );
+
+            if (!sourceSelect || !sourceSelect.value) {
+                message.textContent = "Please select an examination first.";
+                return;
+            }
+
+            const sourceId = sourceSelect.value;
+
+            if (String(sourceId) === String(currentId)) {
+                message.textContent = "Please select a different examination.";
+                return;
+            }
+
+            if (!window.confirm(
+                `Load saved ${kind.toUpperCase()} findings into this examination? Existing ${kind.toUpperCase()} form values may be replaced.`
+            )) {
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/examinations/${currentId}/load-findings/${kind}/${sourceId}`
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Could not load findings.");
+                }
+
+                Object.entries(data).forEach(function ([name, value]) {
+                    setField(name, value);
+                });
+
+                if (typeField) {
+                    if (kind === "xray" && typeField.value === "ECG") {
+                        typeField.value = "BOTH";
+                    } else if (
+                        kind === "ecg" &&
+                        typeField.value === "CHEST_XRAY"
+                    ) {
+                        typeField.value = "BOTH";
+                    }
+
+                    typeField.dispatchEvent(
+                        new Event("change", { bubbles: true })
+                    );
+                }
+
+                message.textContent =
+                    `${kind.toUpperCase()} findings loaded. Review them before saving.`;
+
+            } catch (error) {
+                message.textContent = error.message;
+            }
+        }
+
+        document.getElementById("loadXrayButton")
+            .addEventListener("click", function () {
+                loadFindings("xray");
+            });
+
+        document.getElementById("loadEcgButton")
+            .addEventListener("click", function () {
+                loadFindings("ecg");
+            });
+        {% endif %}
+    });
+    </script>
+</body>
+</html>

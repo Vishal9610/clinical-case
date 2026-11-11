@@ -531,6 +531,23 @@ textarea:focus-visible {
   color: #555;
 }
 
+
+.input-with-unit {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.input-with-unit input {
+  flex: 1;
+  min-width: 0;
+}
+
+.input-with-unit select {
+  width: 85px;
+  flex-shrink: 0;
+}
+
 .report-sheet *,
 .report-sheet *::before,
 .report-sheet *::after {

@@ -18,10 +18,10 @@
         <a href="{{url_for('patients')}}">Patients</a>
         <a href="{{url_for('new_examination')}}">New Examination</a>
         <a href="{{url_for('examinations')}}">All Examinations</a>
-       
+
         <a href="{{url_for('reports')}}">Reports</a>
 
-        
+
       </nav>
 
       <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
@@ -60,20 +60,20 @@
       <section class="content-card">
         <h2>Quick Actions</h2>
         <div class="actions">
-          
-    <a class="link-button" href="{{ url_for('new_patient') }}">
-        + New Patient
-    </a>
 
-    <a class="link-button" href="{{ url_for('new_examination') }}">
-        + New Examination
-    </a>
+          <a class="link-button" href="{{ url_for('new_patient') }}">
+            + New Patient
+          </a>
 
-    <a class="link-button" href="{{ url_for('examinations') }}">
-        View Examinations
-    </a>
+          <a class="link-button" href="{{ url_for('new_examination') }}">
+            + New Examination
+          </a>
 
-    <a class="link-button" href="{{ url_for('reports') }}">View Reports</a>
+          <a class="link-button" href="{{ url_for('examinations') }}">
+            View Examinations
+          </a>
+
+          <a class="link-button" href="{{ url_for('reports') }}">View Reports</a>
 
         </div>
         <p id="actionMessage" class="help-text"></p>
@@ -95,9 +95,25 @@
             <tbody>
               {% for examination, patient in recent_examinations %}
               <tr>
-                <td>{{ patient.full_name }}</td>
-                <td>{{ examination.examination_type }}</td>
-                <td>{{ examination.examination_date.strftime('%d %b %Y') }}</td>
+                <td>{{ patient.full_name or 'Not recorded' }}</td>
+                <td>
+                  {% if examination.examination_type == 'CHEST_XRAY' %}
+                  Chest X-Ray
+                  {% elif examination.examination_type == 'ECG' %}
+                  ECG
+                  {% elif examination.examination_type == 'BOTH' %}
+                  Chest X-Ray + ECG
+                  {% else %}
+                  {{ (examination.examination_type or 'Not recorded')|replace('_', ' ') }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if examination.examination_date %}
+                  {{ examination.examination_date.strftime('%d %b %Y') }}
+                  {% else %}
+                  Not recorded
+                  {% endif %}
+                </td>
                 <td><span class="status">{{ examination.status }}</span></td>
               </tr>
               {% else %}

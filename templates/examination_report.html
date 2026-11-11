@@ -238,10 +238,10 @@
                         </div>
 
                         <div class="report-item">
-                            <strong>Date of Birth</strong>
+                            <strong>Age</strong>
                             <p>
-                                {% if patient.date_of_birth %}
-                                {{ patient.date_of_birth }}
+                                {% if patient.age %}
+                                {{ patient.age }}
                                 {% else %}
                                 Not recorded
                                 {% endif %}
@@ -254,8 +254,36 @@
                         </div>
 
                         <div class="report-item">
-                            <strong>Mobile</strong>
-                            <p>{{ patient.mobile or 'Not recorded' }}</p>
+                            <strong>Weight</strong>
+                            <p>
+                                {% if patient.weight is not none %}
+                                {{ patient.weight }} {{ patient.weight_unit or 'kg' }}
+                                {% else %}
+                                Not recorded
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="report-item">
+                            <strong>Height</strong>
+                            <p>
+                                {% if patient.height is not none %}
+                                {{ patient.height }} {{ patient.height_unit or 'cm' }}
+                                {% else %}
+                                Not recorded
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <div class="report-item">
+                            <strong>Oxygen Level</strong>
+                            <p>
+                                {% if patient.oxigen is not none %}
+                                {{ patient.oxigen }}%
+                                {% else %}
+                                Not recorded
+                                {% endif %}
+                            </p>
                         </div>
 
                         <div class="report-item">
@@ -279,7 +307,7 @@
                                 {% elif examination.examination_type == 'BOTH' %}
                                 Chest X-Ray + ECG
                                 {% else %}
-                                {{ examination.examination_type or 'Not recorded' }}
+                                {{ (examination.examination_type or 'Not recorded')|replace('_', ' ') }}
                                 {% endif %}
                             </p>
                         </div>
@@ -326,16 +354,15 @@
                         ('9. Right Ventricle (RV)', xray.rv_enlargement),
                         ('10. Left Ventricle (LV)', xray.lv_enlargement),
                         ('11. Thymic Shadow', xray.thymic_shadow),
-                        ('12. Aortic Knuckle Position', xray.aorta_position_knuckle),
-                        ('13. Ascending Aorta (AA)', xray.aa_dilatation),
-                        ('14. Descending Aorta (DA)', xray.da_dilatation),
-                        ('15. Main Pulmonary Artery (MPA)', xray.mpa_dilatation),
-                        ('16. Right Pulmonary Artery (RPA)', xray.rpa_dilatation),
-                        ('17. Left Pulmonary Artery (LPA)', xray.lpa_dilatation),
-                        ('18. Pulmonary Plethora', xray.pulmonary_plethora),
-                        ('19. Pulmonary Oligemia', xray.pulmonary_oligemia),
-                        ('20. Pulmonary Arterial Hypertension (PAH)', xray.pah),
-                        ('21. Pulmonary Venous Hypertension (PVH)', xray.pvh)
+
+                        ('12. Descending Aorta (DA)', xray.da_dilatation),
+                        ('13. Main Pulmonary Artery (MPA)', xray.mpa_dilatation),
+                        ('14. Right Pulmonary Artery (RPA)', xray.rpa_dilatation),
+                        ('15. Left Pulmonary Artery (LPA)', xray.lpa_dilatation),
+                        ('16. Pulmonary Plethora', xray.pulmonary_plethora),
+                        ('17. Pulmonary Oligemia', xray.pulmonary_oligemia),
+
+                        ('18. Pulmonary Venous Hypertension (PVH)', xray.pvh)
                         ] %}
                         <div class="report-item">
                             <strong>{{ label }}</strong>
@@ -405,7 +432,39 @@
                 </section>
                 {% endif %}
 
-                <!-- Doctor Signature -->
+                                <!-- Examination Images -->
+                <section class="report-section">
+                    <h2>5. Examination Images</h2>
+
+                    {% if images %}
+                    <div class="report-grid">
+                        {% for image in images %}
+                        <div class="report-item">
+                            <strong>{{ image.original_filename }}</strong>
+                        {% if image.storage_provider == 'local' and image.storage_key %}
+                        <div>
+                            <img
+                                src="{{ url_for('examination_image', image_id=image.id) }}"
+                                alt="{{ image.original_filename }}"
+                                loading="lazy"
+                                style="display:block;max-width:100%;max-height:280px;object-fit:contain;margin-top:10px;border-radius:8px;"
+                            >
+                        </div>
+                        {% else %}
+                        <p>Image preview will be available after the original file is uploaded.</p>
+                        {% endif %}
+                            <p>Format: {{ image.mime_type }}</p>
+                            <p>Size: {{ "%.2f"|format(image.file_size / 1048576) }} MB</p>
+                            <p>Status: {{ image.status }}</p>
+                            <p>Storage: {{ image.storage_provider or 'Not uploaded yet' }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="report-empty">No images are linked to this examination.</p>
+                    {% endif %}
+                </section>
+<!-- Doctor Signature -->
                 <footer class="report-footer">
                     <div>
                         <p><strong>Report generated from saved examination records.</strong></p>

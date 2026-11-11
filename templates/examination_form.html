@@ -44,7 +44,9 @@
                 {% endfor %}
             {% endwith %}
 
-            <form method="POST" class="examination-form">
+            <form method="POST" enctype="multipart/form-data" class="examination-form">
+                <!-- EXAMINATION IMAGES -->
+                
 
                 <!-- EXAMINATION DETAILS -->
                 <section class="content-card">
@@ -132,6 +134,80 @@
                     </div>
                 </section>
 
+                <section class="content-card" id="examinationImageSection">
+                    <h2>Examination Images</h2>
+
+                    {% if edit_mode and existing_images %}
+                    <h3>Previously Uploaded Images</h3>
+                    <div class="form-grid">
+                        {% for image in existing_images %}
+                        <div class="content-card">
+                            <strong>{{ image.original_filename }}</strong>
+
+                            {% if image.storage_provider == 'local' and image.storage_key %}
+                            <img
+                                src="{{ url_for('examination_image', image_id=image.id) }}"
+                                alt="{{ image.original_filename }}"
+                                loading="lazy"
+                                style="display:block;max-width:100%;max-height:220px;object-fit:contain;margin:10px 0;border-radius:8px;"
+                            >
+                            {% else %}
+                            <p>Original image file is not available.</p>
+                            {% endif %}
+
+                            <p>Format: {{ image.mime_type }}</p>
+                            <p>Size: {{ "%.2f"|format(image.file_size / 1048576) }} MB</p>
+                            <p>Status: {{ image.status }}</p>
+
+                            <label style="display:flex;align-items:center;gap:8px;margin:12px 0;color:#b42318;">
+                                <input
+                                    type="checkbox"
+                                    name="remove_image_ids"
+                                    value="{{ image.id }}"
+                                    style="width:auto;"
+                                >
+                                Remove this photo when I save
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <p class="help-text">
+                        Select additional images below. Previously uploaded images will be preserved.
+                    </p>
+
+
+                    <p class="help-text">
+                        Capture images using your mobile camera or select existing images
+                        from your device gallery.
+                    </p>
+
+                    <div class="form-grid">
+
+                        <div>
+                            <label for="galleryImages">Choose from Gallery</label>
+                            <input
+                                type="file"
+                                id="galleryImages"
+                                name="examination_images"
+                                accept="image/*"
+                                multiple
+                            >
+                        </div>
+                    </div>
+
+                    <p id="imageSelectionMessage" class="help-text" aria-live="polite">
+                        No images selected.
+                    </p>
+
+                    <div
+                        id="examinationImagePreview"
+                        class="form-grid"
+                        aria-live="polite"
+                    ></div>
+                </section>
+
                 
 <!-- LOAD PREVIOUSLY SAVED FINDINGS: EDIT MODE ONLY -->
 {% if edit_mode %}
@@ -191,7 +267,7 @@
 </section>
 {% endif %}
 
-                <!-- CHEST X-RAY: 21 FIELDS -->
+                <!-- CHEST X-RAY: 18 FIELDS -->
                 <section class="content-card exam-section" id="xraySection">
                     <h2>Chest X-Ray Findings</h2>
 
@@ -298,26 +374,9 @@
                             </select>
                         </div>
 
+                        
                         <div>
-                            <label for="aorta_position_knuckle">12. Aorta Position Of Knuckle</label>
-                            <select id="aorta_position_knuckle" name="aorta_position_knuckle">
-                                <option value="">Not recorded</option>
-                                <option>Left</option>
-                                <option>Right</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="aa_dilatation">13. Ascending Aorta (AA)</label>
-                            <select id="aa_dilatation" name="aa_dilatation">
-                                <option value="">Not recorded</option>
-                                <option>Present</option>
-                                <option>Absent</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="da_dilatation">14. Descending Aorta (DA)</label>
+                            <label for="da_dilatation">12. Descending Aorta (DA)</label>
                             <select id="da_dilatation" name="da_dilatation">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -326,7 +385,7 @@
                         </div>
 
                         <div>
-                            <label for="mpa_dilatation">15. Main Pulmonary Artery (MPA)</label>
+                            <label for="mpa_dilatation">13. Main Pulmonary Artery (MPA)</label>
                             <select id="mpa_dilatation" name="mpa_dilatation">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -335,7 +394,7 @@
                         </div>
 
                         <div>
-                            <label for="rpa_dilatation">16. Right Pulmonary Artery (RPA)</label>
+                            <label for="rpa_dilatation">14. Right Pulmonary Artery (RPA)</label>
                             <select id="rpa_dilatation" name="rpa_dilatation">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -344,7 +403,7 @@
                         </div>
 
                         <div>
-                            <label for="lpa_dilatation">17. Left Pulmonary Artery (LPA)</label>
+                            <label for="lpa_dilatation">15. Left Pulmonary Artery (LPA)</label>
                             <select id="lpa_dilatation" name="lpa_dilatation">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -353,7 +412,7 @@
                         </div>
 
                         <div>
-                            <label for="pulmonary_plethora">18. Pulmonary Plethora</label>
+                            <label for="pulmonary_plethora">16. Pulmonary Plethora</label>
                             <select id="pulmonary_plethora" name="pulmonary_plethora">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -362,7 +421,7 @@
                         </div>
 
                         <div>
-                            <label for="pulmonary_oligemia">19. Pulmonary Oligemia</label>
+                            <label for="pulmonary_oligemia">17. Pulmonary Oligemia</label>
                             <select id="pulmonary_oligemia" name="pulmonary_oligemia">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -371,16 +430,7 @@
                         </div>
 
                         <div>
-                            <label for="pah">20. Pulmonary Arterial Hypertension (PAH)</label>
-                            <select id="pah" name="pah">
-                                <option value="">Not recorded</option>
-                                <option>Present</option>
-                                <option>Absent</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="pvh">21. Pulmonary Venous Hypertension (PVH)</label>
+                            <label for="pvh">18. Pulmonary Venous Hypertension (PVH)</label>
                             <select id="pvh" name="pvh">
                                 <option value="">Not recorded</option>
                                 <option>Present</option>
@@ -603,31 +653,31 @@
         }
 
         
-        function updateLoadOptions() {
-    const type = typeField ? typeField.value : "";
+    function updateLoadOptions() {
+        const type = typeField ? typeField.value : "";
 
-    const loadSection = document.getElementById("loadFindingsSection");
-    const xrayLoader = document.getElementById("xrayLoader");
-    const ecgLoader = document.getElementById("ecgLoader");
+        const loadSection = document.getElementById("loadFindingsSection");
+        const xrayLoader = document.getElementById("xrayLoader");
+        const ecgLoader = document.getElementById("ecgLoader");
 
-    if (!loadSection) return;
+        if (!loadSection || !xrayLoader || !ecgLoader) return;
 
-    if (type === "CHEST_XRAY") {
-        loadSection.style.display = "";
-        xrayLoader.style.display = "";
-        ecgLoader.style.display = "none";
-    } else if (type === "ECG") {
-        loadSection.style.display = "";
-        xrayLoader.style.display = "none";
-        ecgLoader.style.display = "";
-    } else if (type === "BOTH") {
-        loadSection.style.display = "";
-        xrayLoader.style.display = "";
-        ecgLoader.style.display = "";
-    } else {
-        loadSection.style.display = "none";
+        if (type === "CHEST_XRAY") {
+            loadSection.style.display = "";
+            xrayLoader.style.display = "";
+            ecgLoader.style.display = "none";
+        } else if (type === "ECG") {
+            loadSection.style.display = "";
+            xrayLoader.style.display = "none";
+            ecgLoader.style.display = "";
+        } else if (type === "BOTH") {
+            loadSection.style.display = "";
+            xrayLoader.style.display = "";
+            ecgLoader.style.display = "";
+        } else {
+            loadSection.style.display = "none";
+        }
     }
-}
 
 if (typeField) {
     typeField.addEventListener("change", updateLoadOptions);
@@ -656,15 +706,14 @@ updateLoadOptions();
             rv_enlargement: {{ (xray.rv_enlargement if xray else none) | tojson }},
             lv_enlargement: {{ (xray.lv_enlargement if xray else none) | tojson }},
             thymic_shadow: {{ (xray.thymic_shadow if xray else none) | tojson }},
-            aorta_position_knuckle: {{ (xray.aorta_position_knuckle if xray else none) | tojson }},
-            aa_dilatation: {{ (xray.aa_dilatation if xray else none) | tojson }},
+           
             da_dilatation: {{ (xray.da_dilatation if xray else none) | tojson }},
             mpa_dilatation: {{ (xray.mpa_dilatation if xray else none) | tojson }},
             rpa_dilatation: {{ (xray.rpa_dilatation if xray else none) | tojson }},
             lpa_dilatation: {{ (xray.lpa_dilatation if xray else none) | tojson }},
             pulmonary_plethora: {{ (xray.pulmonary_plethora if xray else none) | tojson }},
             pulmonary_oligemia: {{ (xray.pulmonary_oligemia if xray else none) | tojson }},
-            pah: {{ (xray.pah if xray else none) | tojson }},
+           
             pvh: {{ (xray.pvh if xray else none) | tojson }},
             xray_notes: {{ (xray.additional_notes if xray else '') | tojson }},
 
